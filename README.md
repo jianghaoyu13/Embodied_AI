@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 具身智能算法 · 8 周速成路线图
 
 > 个性化校准版本（已根据你最新背景更新）：
@@ -292,3 +293,17 @@ Week 8  ━━━━━━━━━━  能进面试 / 投简历
 祝你 8 周后能在简历上写：「独立复现 Diffusion Policy / OpenVLA，并在 X 任务上达到 Y 成功率」。
 
 开始吧 → [week_plan/Week01.md](./week_plan/Week01.md) / [day_plan/Day01.md](./day_plan/Day01.md)
+=======
+# Embodied AI — 8 Weeks Bootcamp (Code)
+
+跟随 [Embodied-AI 学习计划](https://github.com/jianghaoyu13/Embodied_AI) 的实战代码仓库。
+
+## Week 1 — PyTorch + RL Foundations
+- Day 1: MNIST baseline + wandb
+- Day 2: Mini-GPT
+- Day 3: Batched SE(3)
+- Day 4: MDP & Tabular RL
+- Day 5: REINFORCE / A2C
+- Day 6: PPO + GAE
+- Day 7: Recap
+>>>>>>> 2014773 (init: bootcamp scaffold)
