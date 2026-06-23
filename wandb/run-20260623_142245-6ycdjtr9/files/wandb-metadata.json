@@ -1,0 +1,40 @@
+{
+  "os": "Linux-6.14.0-27-generic-x86_64-with-glibc2.39",
+  "python": "CPython 3.11.15",
+  "startedAt": "2026-06-23T06:22:45.933718Z",
+  "program": "/home/CNS2026745318/Documents/Embodied-AI/day_plan/scripts/wandb_hello.py",
+  "codePath": "day_plan/scripts/wandb_hello.py",
+  "codePathLocal": "day_plan/scripts/wandb_hello.py",
+  "git": {
+    "remote": "git@github.com:jianghaoyu13/Embodied_AI.git",
+    "commit": "8a326885263257f8c129e0a8b1919bcb0ba9d434"
+  },
+  "email": "haoyujiang13@gmail.com",
+  "root": "/home/CNS2026745318/Documents/Embodied-AI",
+  "host": "CNS202674531822",
+  "executable": "/home/CNS2026745318/miniconda3/envs/embai/bin/python",
+  "cpu_count": 16,
+  "cpu_count_logical": 32,
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "2013991550976",
+      "used": "183865159680"
+    }
+  },
+  "memory": {
+    "total": "64890753024"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 4090",
+      "memoryTotal": "25757220864",
+      "cudaCores": 16384,
+      "architecture": "Ada",
+      "uuid": "GPU-a8b4e85d-d2f0-dbac-7510-b1d837fa4979"
+    }
+  ],
+  "cudaVersion": "13.1",
+  "writerId": "xc4xp1irb33vlqd6pj3r7izo2v64jrgg"
+}

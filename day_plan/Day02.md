@@ -55,7 +55,7 @@ cd ~/embodied-ai-bootcamp-8w/week1-fundamentals/day2_transformer
 - 浏览：[karpathy/nanoGPT](https://github.com/karpathy/nanoGPT) 的 `model.py`（300 行，**先看一遍但不抄**）
 - Karpathy 视频可选：*Let's build GPT: from scratch* 的前 30 分钟
 
-### 笔记产出 — `Day_Plan/notes/Day02_transformer.md`
+### 笔记产出 — `day_plan/notes/Day02_transformer.md`
 
 必须能默写并解释：
 

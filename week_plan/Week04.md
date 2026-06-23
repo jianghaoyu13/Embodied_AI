@@ -55,10 +55,16 @@ week4-arm-mobile/
 ```
 
 ### Daily Tasks
-1. 安装 `pin`（`pip install pin`），加载 Franka Panda URDF
+1. 安装 `pin`(`pip install pin`),加载 Franka Panda URDF
 2. 用 Pinocchio 计算并打印 7-DoF 的 M, C, G
-3. 手算一个 2-DoF planar arm 的动力学公式，用 sympy 验证
-4. 对比「pure kinematics 控制（你 cuRobo 熟）」与「dynamics-aware 控制（CT / OSC）」差异
+3. 手算一个 2-DoF planar arm 的动力学公式,用 sympy 验证
+4. 对比「pure kinematics 控制(你 cuRobo 熟)」与「dynamics-aware 控制(CT / OSC)」差异
+
+> **环境提示**:Day 22 全部在 **本地 `[embai]$`** 跑 —— Pinocchio 是 CPU 计算,纯 Python,与 Isaac Sim 容器无关。
+> ```bash
+> [embai]$ pip install pin sympy
+> [embai]$ python day22_dynamics/franka_dyn.py
+> ```
 
 ### Code Template — Pinocchio + Franka 7-DoF
 
@@ -112,9 +118,9 @@ print("Operational space inertia Λ:", Lambda)
 - [ ] URDF 必须有 inertia 字段，否则 M 算出来全 0
 - [ ] cuRobo 的 jacobian 约定（spatial / body / world-aligned）记清，和 Pinocchio 对比
 
-### 加分（你装了 ROS2 Jazzy，可直接练）
+### 加分(你装了 ROS2 Jazzy + Isaac Sim 6.0 容器以 `--network=host` 启动,host ↔ container ROS2 直连)
 
-把 Pinocchio 的动力学计算用 ROS2 节点暴露出来，作为「真机就能直接接的接口」预演：
+把 Pinocchio 的动力学计算用 ROS2 节点暴露出来,作为「真机就能直接接的接口」预演。**这个节点跑在宿主机 `[embai]$`**,Isaac Sim 在容器里通过 ros2_bridge publish `/joint_states`,host 节点订阅算重力补偿再 publish 回去 —— 跟真机部署拓扑完全一致:
 
 ```python
 # day22_dynamics/ros2_dyn_node.py
@@ -142,12 +148,17 @@ rclpy.init(); rclpy.spin(FrankaDynNode())
 ```
 
 ```bash
-source /opt/ros/jazzy/setup.bash
-python day22_dynamics/ros2_dyn_node.py &
-ros2 topic echo /gravity_compensation
+# 终端 A:容器里启 Isaac Sim,开 ros2_bridge,publish /joint_states
+[host]$ ~/isaac_workspace/run_isaac6.sh
+[isaac6]$ ./isaaclab.sh -p scripts/tutorials/00_sim/create_empty.py --enable_ros2
+
+# 终端 B:本地 embai 跑 Pinocchio ROS2 节点
+[embai]$ source /opt/ros/jazzy/setup.bash
+[embai]$ python day22_dynamics/ros2_dyn_node.py &
+[embai]$ ros2 topic echo /gravity_compensation
 ```
 
-这套节点 Week 7 真机部署可直接复用。
+这套节点 Week 7 真机部署可直接复用(把 `[isaac6]` 的 Isaac Sim 换成真机驱动节点就行)。
 
 ---
 
@@ -176,11 +187,14 @@ ros2 topic echo /gravity_compensation
 
 ### 训练命令
 
+> 全部在 **6.0 容器内** 跑(`[host]$ ~/isaac_workspace/run_isaac6.sh` 进容器):
+
 ```bash
-./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py \
+[isaac6]$ cd /workspace/IsaacLab
+[isaac6]$ ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
     --task Isaac-Lift-Cube-Franka-v0 --headless --num_envs 4096
 
-./isaaclab.sh -p source/standalone/workflows/rsl_rl/play.py \
+[isaac6]$ ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
     --task Isaac-Lift-Cube-Franka-v0 --num_envs 16
 ```
 
@@ -225,9 +239,14 @@ ros2 topic echo /gravity_compensation
 | Learning + 6-DoF | GraspNet / Contact-GraspNet / AnyGrasp | RGB-D 或 PCD | 6-DoF grasp poses + score |
 
 ### Daily Tasks
-1. 跑通 Contact-GraspNet：输入桌面点云，输出候选 grasp poses
-2. 在 Isaac Lab 中：先用 Contact-GraspNet 选 pose，再用 cuRobo 做 motion planning，串成「感知 → 抓取规划 → 执行」demo
+1. 跑通 Contact-GraspNet:输入桌面点云,输出候选 grasp poses
+2. 在 Isaac Lab 中:先用 Contact-GraspNet 选 pose,再用 cuRobo 做 motion planning,串成「感知 → 抓取规划 → 执行」demo
 3. 对比「直接 RL 学抓取」 vs 「GraspNet + cuRobo 模块化」的成功率
+
+> **环境提示**:
+> - Contact-GraspNet 推理 + cuRobo 规划 → 本地 `[embai]$`(纯 PyTorch + GPU)
+> - Isaac Sim 仿真环境 → 容器 `[isaac6]$`(headless 跑)
+> - 两边通过 ROS2 topic 串通(同 Day 22 拓扑):容器 publish `/depth_image` + `/camera_info`,本地节点订阅 → 推理 → publish `/grasp_pose`,容器订阅后用 Isaac Lab 控制器执行
 
 ### Code Template — 端到端抓取 pipeline 骨架
 
@@ -292,9 +311,11 @@ env.close_gripper()
 
 ### 训练命令
 
+> ACT 训练是纯 PyTorch + ALOHA 自带 MuJoCo 仿真,不依赖 Isaac Sim,**在本地 `[embai]$` 跑**:
+
 ```bash
-# ACT（你 Week 2 已用）
-python imitate_episodes.py \
+# ACT(你 Week 2 已用)
+[embai]$ python imitate_episodes.py \
     --task_name sim_transfer_cube_scripted \
     --ckpt_dir ./ckpts/transfer_cube_act \
     --policy_class ACT --kl_weight 10 \
@@ -320,9 +341,17 @@ python imitate_episodes.py \
 
 ### Daily Tasks
 1. 在 Isaac Lab 用 `Isaac-Open-Drawer-Franka-v0` / `Isaac-Cabinet-Franka-v0` 之类**接近移动操作**的任务热身
-2. clone `robocasa/robocasa`，跑通 1-2 个 kitchen mobile manipulation 任务
-3. 阅读 Galaxea / 自变量 / 银河通用公开的轮式双臂资料，理解硬件抽象
-4. 思考你的 Week 7 项目：在仿真中搭建一个轮式双臂平台
+2. clone `robocasa/robocasa`,跑通 1-2 个 kitchen mobile manipulation 任务
+3. 阅读 Galaxea / 自变量 / 银河通用公开的轮式双臂资料,理解硬件抽象
+4. 思考你的 Week 7 项目:在仿真中搭建一个轮式双臂平台
+
+> **环境提示**:
+> - Isaac Lab Open-Drawer / 自建轮式双臂训练 → 容器 `[isaac6]$`(`./isaaclab.sh -p ...`)
+> - RoboCasa 基于 RoboSuite + MuJoCo,**不进 Isaac 容器**,直接本地 `[embai]$`:
+>   ```bash
+>   [embai]$ pip install robocasa robosuite
+>   [embai]$ python -c "import robocasa; from robosuite import make; env=make('PnPCounterToCab', robots='PandaMobile'); env.reset()"
+>   ```
 
 ### 轮式双臂人形的 action 抽象
 
@@ -383,10 +412,16 @@ class MobileBimanualSceneCfg(InteractiveSceneCfg):
 - *Guided Policy Search* (Levine 2013，老但思想重要)
 
 ### Daily Tasks
-1. 在 Lift Cube 任务上：先让 cuRobo 给 nominal trajectory
-2. RL 只学 `Δq` 残差，加在 cuRobo 解上
+1. 在 Lift Cube 任务上:先让 cuRobo 给 nominal trajectory
+2. RL 只学 `Δq` 残差,加在 cuRobo 解上
 3. 对比纯 RL vs Residual RL 的样本效率
-4. 加 DR（摩擦、质量、视觉），训鲁棒策略
+4. 加 DR(摩擦、质量、视觉),训鲁棒策略
+
+> **环境提示**:Residual wrapper 跨两套环境 ——
+> - cuRobo MPC nominal 解 → 本地 `[embai]$`(你已熟练的 cuRobo Python API,跑在 GPU)
+> - Isaac Lab 仿真 + RL 训练 → 容器 `[isaac6]$`
+> - 两边走 ROS2 桥(`/cuRobo_nominal_q` ← host publish, `/joint_state` → host subscribe),沿用 Day 22 拓扑
+> - **如果想避免 ROS2 复杂度**:把 cuRobo 也装到容器内,`ResidualWrapper` 直接 in-process 调用,简单得多。Week 4 推荐先走 in-container 方案。
 
 ### Residual Action 公式
 

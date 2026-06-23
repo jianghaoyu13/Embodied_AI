@@ -37,58 +37,79 @@ week2-imitation/
 - 浏览 Isaac Lab 文档 Architecture 章节
 
 ### Daily Tasks
-1. 安装 Isaac Sim 4.5+ 和 Isaac Lab（约 50GB，预留时间 2-3 小时）
-2. 跑通官方 tutorial：
+1. 在 **6.0 Docker 容器**内安装 Isaac Lab(若 Day 0 已装,跳过此步)
+2. 跑通官方 tutorial(全部在容器内,headless 训练):
    - `Isaac-Cartpole-v0`
-   - `Isaac-Lift-Cube-Franka-v0`（这是你后面所有操作任务的起点）
-3. 阅读 `omni.isaac.lab.envs` 模块的源码
-4. 用随机策略跑 100 个 episode，画成功率分布
+   - `Isaac-Lift-Cube-Franka-v0`(后面所有操作任务的起点)
+3. 用 **5.1 本地 GUI** 打开 Lift-Cube 的 USD 场景"看一眼",理解 Articulation 层级
+4. 阅读 `omni.isaac.lab.envs` 模块的源码(挂载点 `~/isaac_workspace/IsaacLab/source/...` 在宿主机直接编辑)
+5. 用随机策略跑 100 个 episode,画成功率分布
 
-### 安装命令（基于你已有的 Isaac Sim 6.0）
+### 双路径工作流(已为你的 5.1 本地 + 6.0 Docker 双装设计)
+
+> **使用约定**(再贴一次):
+> - `[isaac6]$` —— Isaac Sim 6.0 Docker 容器内(主力训练)
+> - `[5.1]$`   —— 本地 Isaac Sim 5.1(GUI 打开 USD 看场景 / 单步调试)
+> - `[embai]$` —— 本地 conda `embai` 环境(纯 PyTorch / 数据处理)
+
+#### Path A — 本地 5.1 GUI 看场景(轻量,不训练)
 
 ```bash
-# 激活 isaaclab 环境
-conda activate isaaclab
+# 在宿主机直接启动 5.1 GUI
+[5.1]$ cd ~/.local/share/ov/pkg/isaac-sim-5.1.0   # 路径以你实际为准
+[5.1]$ ./isaac-sim.sh
 
-# 如果你已经通过 pip 装好了 Isaac Sim 6.0（见 README Day 0 步骤 4a），直接装 Isaac Lab：
-git clone https://github.com/isaac-sim/IsaacLab.git
-cd IsaacLab
-./isaaclab.sh --install
+# GUI 里:File → Open → 浏览到 IsaacLab 仓库的 USD 资产
+# (这是 Day 8 唯一需要 5.1 的环节,后面训练全部走 6.0)
+```
 
-# 如果你是通过 Omniverse Launcher 装的 Isaac Sim 6.0：
-# 需要先 export ISAACSIM_PATH 指向你的安装目录，比如：
-# export ISAACSIM_PATH=~/.local/share/ov/pkg/isaac-sim-6.0.0
-# 然后再 ./isaaclab.sh --install
+> 5.1 不要装 Isaac Lab —— USD schema 与 6.0 不兼容,**两边来回切会损坏 .usd 文件**。
 
-# 验证 Isaac Lab 安装
-./isaaclab.sh -p scripts/tutorials/00_sim/create_empty.py
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
-    --task Isaac-Reach-Franka-v0 --headless --num_envs 4096
+#### Path B — Isaac Sim 6.0 容器内训练(主力)
 
-# 如果要看可视化（非 headless）：
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
+```bash
+# 1. 启动容器(Day 0 已写好脚本)
+[host]$ ~/isaac_workspace/run_isaac6.sh
+# 进入容器 shell 后,提示符变成 root@<container>:/
+
+# 2. 首次:在容器内装 Isaac Lab(Day 0 Step 3c 已做过则跳过)
+[isaac6]$ cd /workspace/IsaacLab
+[isaac6]$ ./isaaclab.sh --install
+
+# 3. 验证安装
+[isaac6]$ ./isaaclab.sh -p scripts/tutorials/00_sim/create_empty.py
+
+# 4. 跑 Lift-Cube-Franka(headless,16384 envs 在 4090 上能跑)
+[isaac6]$ ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Isaac-Lift-Cube-Franka-v0 --headless --num_envs 4096
+
+# 5. 训练完想看 rollout 视频(GUI):
+[isaac6]$ ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
     --task Isaac-Lift-Cube-Franka-v0 --num_envs 16
+# 容器有 --network=host + DISPLAY 转发,Omniverse 窗口会直接弹到宿主机
 ```
 
-> **注意**：Isaac Lab 的 `./isaaclab.sh` 是入口脚本，它会自动设置 Isaac Sim 的 Python 路径。
-> 你**不需要手动启动 Isaac Sim GUI**来跑 RL 训练——全部通过命令行 + `--headless` 搞定。
+> **为什么 RL 训练只走 6.0 容器**:
+> - 镜像里 PyTorch / Isaac Sim / Isaac Lab 三方版本已对齐,不踩本地 conda 的兼容坑
+> - shader / asset 缓存挂到 `~/isaac_workspace/nv_cache`,容器删掉也不丢
+> - `./isaaclab.sh` 入口脚本会自动设置容器内 Python 路径,你不需要手动 `export`
 
-### ROS2 Jazzy 桥接（你已装好 Jazzy，可直接利用）
+### ROS2 Jazzy 桥接(host ↔ container)
 
-Isaac Sim 6.0 内置 `ros2_bridge` 扩展，原生支持 ROS2 Jazzy。在 Week 2 你可以暂不深入，但建议**Day 8 跑一个 hello world 验证 bridge**：
+Isaac Sim 6.0 镜像内置 `ros2_bridge` 扩展,容器以 `--network=host` 启动,所以容器里发出的 ROS2 topic 在宿主机直接订阅:
 
 ```bash
-# 启动 Isaac Sim（需要 ROS2 环境已 source）
-source /opt/ros/jazzy/setup.bash
-./isaaclab.sh -p scripts/tutorials/00_sim/create_empty.py --enable_ros2
+# 终端 A:容器内启动带 ROS2 bridge 的场景
+[isaac6]$ ./isaaclab.sh -p scripts/tutorials/00_sim/create_empty.py --enable_ros2
 
-# 在另一终端订阅默认 topic
-ros2 topic list
+# 终端 B:宿主机订阅
+[host]$ source /opt/ros/jazzy/setup.bash
+[host]$ ros2 topic list
 ```
 
-> 用途预告：
-> - Week 4：用 ROS2 publish Pinocchio 算的 `tau`，订阅 Isaac Sim 关节状态
-> - Week 7：作为 sim2real bridge，同一套节点既能驱动 Isaac Sim，又能切到真机
+> 用途预告:
+> - Week 4:本地 `[embai]$` 用 Pinocchio 算 `tau`,通过 ROS2 publish 到容器内的 Isaac Sim
+> - Week 7:同一套 ROS2 节点,既能驱动容器仿真,又能切到真机
 
 ### 关键概念速记
 
@@ -103,25 +124,34 @@ ros2 topic list
 | `EventTerm` | 随机化 | DR (domain randomization) |
 
 ### Tuning Checklist
-- [ ] GPU 利用率：`Isaac-Lift-Cube-Franka-v0` 用 4096 envs 时应跑满 90%+
-- [ ] FPS（steps/sec/env）：< 100k 说明哪里瓶颈
-- [ ] 可视化只在 debug 时开（`--headless` 加速训练 5-10x）
+- [ ] 容器内 `nvidia-smi` 能看到 4090,GPU 利用率 `Isaac-Lift-Cube-Franka-v0` 用 4096 envs 时应跑满 90%+
+- [ ] FPS(steps/sec/env):< 100k 说明哪里瓶颈
+- [ ] `--headless` 加速训练 5-10x,只在 debug / 录视频时去掉
+- [ ] 长训练用 `tmux new -s isaac6 -d "~/isaac_workspace/run_isaac6.sh"`,容器在 tmux 里跑
 
 ### Common Pitfalls
-- **NVIDIA 驱动版本**：必须 ≥535，否则 Isaac Sim 启动报错
-- **首次启动慢**：会下载很多 USD asset，10-30 分钟，正常
-- **Vulkan 错误**：装 `libvulkan1` `vulkan-utils`
-- **不要把 `Isaac-` 前缀的 env 名拼错**，找不到环境时是这个原因
+- **`docker: Error response from daemon: could not select device driver "nvidia"`** → 没装 nvidia-container-toolkit,`sudo apt install nvidia-container-toolkit && sudo systemctl restart docker`
+- **首次 `--headless` 训练 hang 在 "Loading USD"** → 在下载 asset,正常,10-30 分钟
+- **GUI 黑屏 / Vulkan 错误** → 宿主机执行 `xhost +local:root`,确认 `$DISPLAY` 已传入容器(脚本里已带)
+- **改了宿主机 IsaacLab 源码,容器里没生效** → 挂载是双向实时的,但 Python module 已 import 的话需要重启容器内进程
+- **不要把 `Isaac-` 前缀的 env 名拼错**,找不到环境时多半是这个
 
 ---
 
 ## Day 9 — MuJoCo MJX + Genesis 速览
 
 ### Daily Tasks
-1. 安装 `mujoco` + `mujoco-mjx`，跑官方 cartpole demo
-2. 体验 MJX 的 GPU 并行（10000 envs 同时跑）
-3. 安装 Genesis（`pip install genesis-world`），跑 quick start
-4. 写一个 markdown 表格对比四个仿真器（Isaac Lab / MuJoCo / MJX / Genesis）
+1. 安装 `mujoco` + `mujoco-mjx`,跑官方 cartpole demo
+2. 体验 MJX 的 GPU 并行(10000 envs 同时跑)
+3. 安装 Genesis(`pip install genesis-world`),跑 quick start
+4. 写一个 markdown 表格对比四个仿真器(Isaac Lab / MuJoCo / MJX / Genesis)
+
+> **环境提示**:本日全部在 **本地 `[embai]$`** 跑 —— MJX / Genesis 都是纯 pip 包,与 Isaac Sim 无关,不需要进容器。
+
+```bash
+[embai]$ pip install mujoco mujoco-mjx genesis-world
+[embai]$ python day9_mujoco_genesis/mjx_parallel.py
+```
 
 ### 对比表（你应该能填出来）
 
@@ -165,13 +195,19 @@ trajs = rollout(keys)  # [10000, 200, qpos_dim]
 
 ### 早晨论文 (1h)
 - LeRobot 项目 README + 一篇 datasets 教程
-- *Push-T* 任务原始 paper（Implicit BC, Florence 2021）
+- *Push-T* 任务原始 paper(Implicit BC, Florence 2021)
 
 ### Daily Tasks
 1. `pip install lerobot` 并跑通示例
-2. 下载 `lerobot/pusht` 数据集，看其 parquet 结构
-3. 用键盘录制自己的 Push-T 数据集（30 条）
-4. 把数据上传 HuggingFace Hub（练习数据集打包）
+2. 下载 `lerobot/pusht` 数据集,看其 parquet 结构
+3. 用键盘录制自己的 Push-T 数据集(30 条)
+4. 把数据上传 HuggingFace Hub(练习数据集打包)
+
+> **环境提示**:Day 10-13 全部在 **本地 `[embai]$`** 跑 —— LeRobot / BC / ACT 都是纯 PyTorch 工作流,Isaac Sim 不参与。
+> ```bash
+> [embai]$ pip install lerobot
+> [embai]$ huggingface-cli login   # 上传数据集需要
+> ```
 
 ### Code Template (加载 LeRobot 数据)
 

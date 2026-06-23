@@ -288,4 +288,4 @@
 - 每年 SOTA 都在变，但「数据 / 仿真 / 表征 / 决策 / 控制」五大模块的位置永远在那。
 - 这份 Resources.md 也欢迎你 8 周后回来更新。
 
-→ [README.md](./README.md) | [Milestones.md](./Milestones.md)
+→ [../README.md](../README.md) | [Milestones.md](./Milestones.md)

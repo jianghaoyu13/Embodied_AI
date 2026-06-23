@@ -1,0 +1,50 @@
+_wandb:
+    value:
+        cli_version: 0.24.2
+        e:
+            xc4xp1irb33vlqd6pj3r7izo2v64jrgg:
+                codePath: day_plan/scripts/wandb_hello.py
+                codePathLocal: day_plan/scripts/wandb_hello.py
+                cpu_count: 16
+                cpu_count_logical: 32
+                cudaVersion: "13.1"
+                disk:
+                    /:
+                        total: "2013991550976"
+                        used: "183865159680"
+                email: haoyujiang13@gmail.com
+                executable: /home/CNS2026745318/miniconda3/envs/embai/bin/python
+                git:
+                    commit: 8a326885263257f8c129e0a8b1919bcb0ba9d434
+                    remote: git@github.com:jianghaoyu13/Embodied_AI.git
+                gpu: NVIDIA GeForce RTX 4090
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Ada
+                      cudaCores: 16384
+                      memoryTotal: "25757220864"
+                      name: NVIDIA GeForce RTX 4090
+                      uuid: GPU-a8b4e85d-d2f0-dbac-7510-b1d837fa4979
+                host: CNS202674531822
+                memory:
+                    total: "64890753024"
+                os: Linux-6.14.0-27-generic-x86_64-with-glibc2.39
+                program: /home/CNS2026745318/Documents/Embodied-AI/day_plan/scripts/wandb_hello.py
+                python: CPython 3.11.15
+                root: /home/CNS2026745318/Documents/Embodied-AI
+                startedAt: "2026-06-23T06:22:45.933718Z"
+                writerId: xc4xp1irb33vlqd6pj3r7izo2v64jrgg
+        m: []
+        python_version: 3.11.15
+        t:
+            "3":
+                - 2
+                - 13
+                - 16
+                - 61
+            "4": 3.11.15
+            "5": 0.24.2
+            "12": 0.24.2
+            "13": linux-x86_64
+lr:
+    value: 0.001

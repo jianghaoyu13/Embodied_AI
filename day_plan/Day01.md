@@ -1,7 +1,9 @@
 # Day 01 — 环境验证 + PyTorch 工程肌肉记忆 + MNIST baseline
 
-> **日期**：2026-06-19（Week 1, Day 1）
+> **日期**：2026-06-23（Week 1, Day 1）
+> 
 > **本日定位**：把"硬件 + 系统 + Python + PyTorch + wandb"全套打通，跑出本计划第一个 wandb run。
+> 
 > **总投入**：约 8 小时（含早晨 / 上午 / 下午 / 晚上）
 
 ---
@@ -13,7 +15,7 @@
 ```bash
 # OS 信息
 uname -a
-lsb_release -a            # 期望 Ubuntu 24.04（你已装 ROS2 Jazzy → 推断 24.04）
+lsb_release -a            # 期望 Ubuntu 24.04
 
 # GPU & 驱动
 nvidia-smi                # 期望看到 RTX 4090, Driver 590.48.01, CUDA 13.1
@@ -62,7 +64,7 @@ which isaacsim 2>/dev/null
 - 公式手推：`Attention(Q,K,V) = softmax(QK^T / √d_k) V`，能解释为什么除以 `√d_k`
 
 ### 产出
-在 `Day_Plan/notes/Day01_attention.md` 写一页：
+在 `day_plan/notes/Day01_attention.md` 写一页：
 - 公式
 - 为什么除以 `√d_k`：让 dot product 方差稳定，防 softmax 进入梯度消失区
 - multi-head 的意义：相当于多个子空间并行学
@@ -91,12 +93,13 @@ conda config --set auto_activate_base false
 ### 3.2 创建 embai 主环境
 
 ```bash
-conda create -n embai python=3.10 -y
+# Python 3.11 — 与 Isaac Sim 6.0 容器内 Python 对齐
+conda create -n embai python=3.11 -y
 conda activate embai
 
-# PyTorch（Driver 590 → 用 cu124 wheels，最稳）
+# PyTorch（Driver 590 + Driver CUDA 13.1 → cu130 wheels，已是 PyTorch 2.11+ stable）
 pip install --upgrade pip
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
 
 # 基础工具
 pip install numpy scipy matplotlib einops tqdm rich pyyaml
@@ -131,7 +134,7 @@ torch: 2.5.x
 cuda available: True
 device count: 1
 device name: NVIDIA GeForce RTX 4090
-cuda version (compiled): 12.4
+cuda version (compiled): 12.8
 matmul ok, c.sum(): <some number>
 ```
 
@@ -139,7 +142,7 @@ matmul ok, c.sum(): <some number>
 
 | 报错 | 原因 | 解决 |
 |------|------|------|
-| `cuda available: False` | PyTorch 装成了 cpu 版 | `pip uninstall torch -y && pip install torch --index-url https://download.pytorch.org/whl/cu124` |
+| `cuda available: False` | PyTorch 装成了 cpu 版 | `pip uninstall torch -y && pip install torch --index-url https://download.pytorch.org/whl/cu130` |
 | `Driver too old` | 不会发生，你 590 够新 | — |
 | `libcudart.so not found` | 系统 CUDA toolkit 路径混 | PyTorch 自带 runtime，`unset LD_LIBRARY_PATH` 试试 |
 
@@ -163,7 +166,7 @@ wandb login
 写一个 hello world 验证：
 
 ```python
-# Day_Plan/scripts/wandb_hello.py
+# day_plan/scripts/wandb_hello.py
 import wandb, time, random
 wandb.init(project="embai-day01", name="hello", config={"lr": 1e-3})
 for step in range(50):
@@ -174,12 +177,15 @@ print("打开 wandb URL 查看曲线")
 ```
 
 ```bash
-mkdir -p ~/Documents/Embodied-AI/Day_Plan/scripts
-cd ~/Documents/Embodied-AI/Day_Plan/scripts
+mkdir -p ~/Documents/Embodied-AI/day_plan/scripts
+cd ~/Documents/Embodied-AI/day_plan/scripts
 python wandb_hello.py
 ```
 
 ### 4.2 GitHub Repo 初始化
+
+> 你的远端仓库已建好:`git@github.com:jianghaoyu13/Embodied_AI.git`(下面命令直接对接,不必再去 GitHub 网页建)。
+> 本地工作目录沿用 `~/embodied-ai-bootcamp-8w`(代码仓,与 `~/Documents/Embodied-AI` 这份学习计划文档分开存),**远端名 ≠ 本地名,这是常规做法,不必改**。
 
 ```bash
 mkdir -p ~/embodied-ai-bootcamp-8w
@@ -208,9 +214,9 @@ EOF
 
 # README
 cat > README.md <<'EOF'
-# Embodied AI Bootcamp — 8 Weeks
+# Embodied AI — 8 Weeks Bootcamp (Code)
 
-跟随 [Embodied-AI 学习计划](../Documents/Embodied-AI) 的实战代码仓库。
+跟随 [Embodied-AI 学习计划](https://github.com/jianghaoyu13/Embodied_AI) 的实战代码仓库。
 
 ## Week 1 — PyTorch + RL Foundations
 - Day 1: MNIST baseline + wandb
@@ -225,14 +231,18 @@ EOF
 git add .
 git commit -m "init: bootcamp scaffold"
 
-# GitHub 上建私有 repo（先用 gh 或网页都行）
-# 如果有 gh：
-# gh auth login
-# gh repo create embodied-ai-bootcamp-8w --private --source=. --remote=origin --push
+# 添加你已建好的远端并首推
+git remote add origin git@github.com:jianghaoyu13/Embodied_AI.git
+git push -u origin main
 
-# 没 gh 就网页建 repo，然后：
-# git remote add origin git@github.com:<your_user>/embodied-ai-bootcamp-8w.git
+# (可选) 如果远端不是空仓库(已有 README),先 pull 合并:
+# git pull --rebase origin main
 # git push -u origin main
+
+# SSH key 没配过的话:
+# ssh-keygen -t ed25519 -C "jianghaoyu13@github"
+# cat ~/.ssh/id_ed25519.pub        # 复制到 https://github.com/settings/keys
+# ssh -T git@github.com            # 看到 "Hi jianghaoyu13!" 即成功
 ```
 
 ### 自检
@@ -483,76 +493,99 @@ print(f"compiled: {time.time() - t0:.3f}s")
 
 ---
 
-## 7. 晚上 19:30 - 20:30 — Isaac Sim 6.0 健康检查
+## 7. 晚上 19:30 - 20:30 — Isaac Sim 双装健康检查(5.1 本地 + 6.0 Docker)
 
-> **本日不开始装 Isaac Lab**，只验证你已下载的 Isaac Sim 6.0 能起来。
+> **本日不开始装 Isaac Lab**,只验证两套环境都能起来:
+> - **5.1 本地** —— 平时打开 USD 看场景 / 单步调试用,GUI 启动延迟低
+> - **6.0 Docker** —— Week 2 起所有 RL/IL 训练的主战场,headless 高吞吐
+>
+> 命令前缀约定:`[5.1]$` = 本地 5.1,`[host]$` = 宿主机 shell,`[isaac6]$` = 6.0 容器内。
 
-### 7.1 找到你的 Isaac Sim 6.0 安装位置
-
-```bash
-# 方式 A：Omniverse Launcher 装的
-ls ~/.local/share/ov/pkg/ | grep isaac
-
-# 方式 B：手动解压
-ls ~/isaac-sim* 2>/dev/null
-ls /opt/isaac-sim* 2>/dev/null
-
-# 方式 C：你直接下载 zip 解压到了某处，自己找一下
-find ~ -maxdepth 4 -name "isaac-sim.sh" 2>/dev/null
-```
-
-设个环境变量方便后续调用：
+### 7.1 Isaac Sim 5.1 本地 sanity check
 
 ```bash
-echo 'export ISAACSIM_PATH=$HOME/.local/share/ov/pkg/isaac-sim-6.0.0' >> ~/.bashrc
-# 把路径换成你实际找到的，然后
-source ~/.bashrc
+# 找到 5.1 安装位置(以你实际为准,可能在 ~/isaacsim/ 或 ~/.local/share/ov/pkg/)
+[host]$ ls ~/.local/share/ov/pkg/ 2>/dev/null | grep "isaac-sim-5.1"
+[host]$ ls ~/isaacsim 2>/dev/null
+[host]$ find ~ -maxdepth 4 -name "isaac-sim.sh" 2>/dev/null
+
+# 启动 GUI
+[5.1]$ cd ~/isaacsim   # 路径换成你实际的
+[5.1]$ ./isaac-sim.sh
 ```
 
-### 7.2 启动 Isaac Sim 6.0 GUI 一次
-
-```bash
-cd $ISAACSIM_PATH
-./isaac-sim.sh
-```
-
-第一次启动会下载 shader cache，10-30 分钟。**不要急，挂着等**。
-
-成功标志：
+成功标志:
 - 看到 NVIDIA Isaac Sim 主界面
-- 没有 Vulkan / Driver / RTX 报错
 - 左侧 Stage panel 显示 `World`
+- 没有 Vulkan / Driver / RTX 报错
+- 第一次启动会下 shader cache(10-30 分钟,挂着等)
 
-### 7.3 跑一个最简单的 Python 例子（确认 headless 能用）
+> 5.1 本地 **不要装 Isaac Lab** —— Lab 只在 6.0 容器内装,USD schema 不兼容。
 
-在 Isaac Sim 6.0 里，打开 `Window > Examples Browser`，找到 `Python Scripting Examples > Simulation > Add Cubes` 之类，点 Play 看能动。
+### 7.2 Isaac Sim 6.0 Docker sanity check
 
-或命令行：
+#### 7.2.1 准备挂载目录(只做一次)
 
 ```bash
-$ISAACSIM_PATH/python.sh -c "
+[host]$ mkdir -p ~/isaac_workspace/{IsaacLab,projects,nv_cache/main,nv_cache/computecache,nv_logs,nv_config,nv_data,nv_pkg,nv_hub,docs}
+
+# 容器以 UID 1234 运行,宿主机目录必须能被 1234 写
+[host]$ sudo chown -R 1234:1234 ~/isaac_workspace
+# 如果你本地用户已经是 UID 1234(`id -u` 查一下),可跳过
+```
+
+#### 7.2.2 启动脚本(写一次,以后直接用)
+
+把 README §3.2 Step 3b 的 `run_isaac6.sh` 内容写到 `~/isaac_workspace/run_isaac6.sh`,然后:
+
+```bash
+[host]$ chmod +x ~/isaac_workspace/run_isaac6.sh
+[host]$ ~/isaac_workspace/run_isaac6.sh
+# 进入容器,提示符变成 ubuntu@<host>:/$
+```
+
+#### 7.2.3 容器内 sanity check
+
+```bash
+# GPU 可见
+[isaac6]$ nvidia-smi
+# 期望:看到 RTX 4090, Driver 590.48.01
+
+# Isaac Sim 6.0 Python API 能起 SimulationApp
+[isaac6]$ python -c "
 from isaacsim import SimulationApp
 sim = SimulationApp({'headless': True})
-print('Isaac Sim started!')
+print('Isaac Sim 6.0 OK')
 sim.close()
 "
+# 期望:打印 'Isaac Sim 6.0 OK' 然后正常退出
 ```
 
-期望：打印 `Isaac Sim started!` 然后正常退出。
+#### 7.2.4 (可选) 容器内 GUI 验证
 
-### 7.4 常见踩坑
+```bash
+# 容器内启动 Isaac Sim GUI(走 X11 转发到宿主机)
+[isaac6]$ /isaac-sim/isaac-sim.sh
+# 期望:Omniverse 窗口弹到宿主机桌面
+# 第一次启动同样要下 shader cache,但因为挂载了 nv_cache/computecache,以后重启就快了
+```
+
+### 7.3 常见踩坑
 
 | 报错 | 解决 |
 |------|------|
-| `Vulkan validation error` | 装 `sudo apt install libvulkan1 vulkan-tools` |
-| `Driver too old` | 不会，你 590 足够新 |
-| `Failed to find shader cache` | 让它跑完第一次 download |
-| `GLIBC_2.X not found` | Ubuntu 24.04 没问题；如果用更老 OS 需升级 |
-| 完全黑屏 | Wayland → X11 切换试试 |
+| `docker: Error response from daemon: could not select device driver "nvidia"` | 没装 nvidia-container-toolkit:`sudo apt install nvidia-container-toolkit && sudo systemctl restart docker` |
+| 容器内 `nvidia-smi` 报 `command not found` | 启动脚本漏了 `--gpus all --runtime=nvidia` |
+| GUI 黑屏 / `cannot connect to X server` | 宿主机执行 `xhost +local:`,确认 `.Xauthority` 已挂载 |
+| 容器内创建文件,host 看到是 1234:1234 owner | 正常,这是非 root 容器的预期行为 |
+| `Vulkan validation error`(本地 5.1) | `sudo apt install libvulkan1 vulkan-tools` |
+| `Failed to find shader cache` | 让它跑完第一次 download,后续靠 `nv_cache/computecache` 挂载持久化 |
+| 完全黑屏(本地 5.1) | Wayland → X11 切换试试 |
 
 ### 自检
-- [ ] Isaac Sim 6.0 GUI 能启动（不闪退）
-- [ ] `python.sh` 命令行能用 SimulationApp 跑一次
+- [ ] 本地 Isaac Sim 5.1 GUI 能启动(不闪退)
+- [ ] `~/isaac_workspace/run_isaac6.sh` 能成功进入容器,`nvidia-smi` 看到 4090
+- [ ] 容器内 `SimulationApp({'headless': True})` 能正常 init + close
 
 ---
 
@@ -640,7 +673,7 @@ git push origin main
 3. **commit 信息别写 "fix"**：写"day1: <做了什么>"
 4. **明天起床先 `nvidia-smi`**：确认 GPU 没被任何僵尸进程占着
 
-晚安。明天打开 `Day_Plan/Day02.md`（如果我后续给你生成的话）或直接看 `Week01.md` Day 2。
+晚安。明天打开 `day_plan/Day02.md` 或直接看 `week_plan/Week01.md` Day 2。
 
 ---
 

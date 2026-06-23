@@ -240,4 +240,4 @@
 
 ---
 
-→ [README.md](./README.md) | [Resources.md](./Resources.md)
+→ [../README.md](../README.md) | [Resources.md](./Resources.md)
