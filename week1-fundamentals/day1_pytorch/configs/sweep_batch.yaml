@@ -1,0 +1,5 @@
+program: src/train_mnist_raw.py
+method: grid
+parameters:
+  batch:
+    values: [16, 32, 64, 128, 256, 512]
