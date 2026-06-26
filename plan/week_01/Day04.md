@@ -1,7 +1,9 @@
 # Day 04 — MDP & Tabular RL（Bellman / VI / PI / Q-Learning）
 
 > **日期**：2026-06-24（Week 1, Day 4）
+>
 > **本日定位**：把 RL 的「**根**」打牢 —— Bellman 方程、Value Iteration、Policy Iteration、Tabular Q-Learning。这是后面 Day 5（PG/A2C）、Day 6（PPO/GAE）、Week 4（Franka RL）、Week 7（轮式双臂 residual RL）的共同地基。**今天不碰深度网络**，全部 numpy + Gymnasium。
+>
 > **总投入**：约 8 小时
 
 ---

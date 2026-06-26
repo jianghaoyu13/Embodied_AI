@@ -675,4 +675,4 @@ git push origin main
 
 ---
 
-→ [Day07.md](./Day07.md)（待生成） | [Week01.md](../week_plan/Week01.md)
+→ [Day07.md](./Day07.md) | [Week01.md](../week_plan/Week01.md)

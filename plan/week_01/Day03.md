@@ -1,7 +1,9 @@
 # Day 03 — Batched SE(3) in PyTorch
 
 > **日期**：2026-06-23（Week 1, Day 3）
+>
 > **本日定位**：把你 cuRobo 时代用 numpy / 自己代数推过的 SE(3) 工具，**重写成 PyTorch batched + autograd 能过的版本**。Week 3 Diffusion Policy 的 6-DoF action、Week 4 Pinocchio Jacobian、Week 5/6 VLA 的 SE(3) action head 都靠它。
+>
 > **总投入**：约 8 小时
 
 ---

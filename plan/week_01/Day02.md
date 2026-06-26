@@ -1,7 +1,9 @@
 # Day 02 — 从零实现 Mini-GPT + Tiny Shakespeare 训练
 
-> **日期**：2026-06-20（Week 1, Day 2）
+> **日期**：2026-06-24（Week 1, Day 2）
+>
 > **本日定位**：把 Transformer 从 paper 公式 → PyTorch 代码 → 能采样的语言模型，全链路打通一遍。这是 Week 5/6 VLA 模型理解的地基。
+>
 > **总投入**：约 8 小时
 
 ---
